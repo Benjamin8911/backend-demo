@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"
+      integrity="sha512-xIPqqrfvUAc/Cspuj7Bq0UtHNo/5qkdyngx6Vwt+tmbvTLDszzXM0G6c91LXmGrRx8KEPulT+AfOOez+TeVylg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <title>Koa Demo</title>
+  </head>
+  <body>
+    <div id="app">
+      <div>
+        <h1>Session</h1>
+        <input type="text" placeholder="username" v-model="username" />
+        <input type="password" v-model="password" />
+        <button type="submit" @click="login">Login</button>
+        <button type="submit" @click="logout">Logout</button>
+        <button type="submit" @click="getUser">GetUser</button>
+        <button type="submit" @click="clearLog">ClearLog</button>
+        <ul>
+          <li v-for="log in logs">{{log}}</li>
+        </ul>
+      </div>
+      <div>
+        <h1>Token</h1>
+        <input type="text" placeholder="username" v-model="usernameToken" />
+        <input type="password" v-model="passwordToken" />
+        <button type="submit" @click="loginToken">Login</button>
+        <button type="submit" @click="logoutToken">Logout</button>
+        <button type="submit" @click="getUserToken">GetUser</button>
+        <button type="submit" @click="clearLogToken">ClearLog</button>
+        <ul>
+          <li v-for="log in logsToken">{{log}}</li>
+        </ul>
+      </div>
+      <div>
+        <h1>RESTful API</h1>
+        <input type="text" v-model="form.id">
+        <input type="text" v-model="form.user">
+        <button @click="get">GET</button>
+        <button @click="post">POST</button>
+        <button @click="put">PUT</button>
+        <button @click="del">DELETE</button>
+      </div>
+      <div>
+        <h1>Mongoose</h1>
+        <input type="text" v-model="fruit.name" placeholder="name">
+        <input type="text" v-model="fruit.price" placeholder="price">
+        <input type="text" v-model="fruit.size" placeholder="size">
+        <input type="text" v-model="fruit.from" placeholder="from">
+        <div>
+          <button @click="findFruit">Get Fruit</button>
+          <button @click="createFruits">Create Fruit</button>
+          <button @click="updateFruit">Update Fruit</button>
+        </div>
+        <ul>
+          <li :key="item._id" v-for="item in fruits">{{item.name}} 价格：{{item.price}}<button @click="deleteFruit(item._id)">delete</button></li>
+        </ul>
+      </div>
+    </div>
+    <script>
+      axios.interceptors.request.use(
+        config => {
+          const token = window.localStorage.getItem('token')
+          if(token) {
+            config.headers.common['Authorization'] = "Bearer " + token
+          }
+          return config
+        },
+        err => {
+          return Promise.reject(err)
+        }
+      )
+      axios.defaults.withCredentials = true;
+      axios.interceptors.response.use((response) => {
+        // app.logs.push(JSON.stringify(response.data));
+        app.logsToken.push(JSON.stringify(response.data))
+        return response;
+      });
+      const app = new Vue({
+        el: "#app",
+        data: {
+          username: "",
+          password: "",
+          usernameToken: '',
+          passwordToken: '',
+          logs: [],
+          logsToken: [],
+          form: {
+            user: 'Smith',
+            id: 0
+          },
+          fruits: [],
+          fruit: {
+            name: '',
+            price: '',
+            size: '',
+            from: ''
+          }
+        },
+        mounted() {
+          this.findFruit()
+        },
+        methods: {
+          async get() {
+            const res = await axios.get('/api/users')
+          },
+          async post() {
+            const res = await axios.post('/api/users', this.form)
+          },
+          async put() {
+            const res = await axios.put('/api/users', this.form)
+          },
+          async del() {
+            const res = await axios.delete(`/api/users/${this.form.id}`)
+          },
+          login() {
+            axios.post("/users/login", {
+              username: this.username,
+              password: this.password,
+            });
+            console.log("submit");
+            this.username = "";
+            this.password = "";
+          },
+          logout() {
+            axios.post("/users/logout");
+          },
+          getUser() {
+            axios.get("/users/getUser");
+          },
+          clearLog() {
+            this.logs = [];
+          },
+          loginToken: async function() {
+            const res = await axios.post('/users/login-token', {
+              username: this.usernameToken,
+              password: this.passwordToken
+            })
+            window.localStorage.setItem('token', res.data.token)
+          },
+          logoutToken() {
+            localStorage.removeItem('token')
+          },
+          getUserToken() {
+            axios.get('/users/getUser-token')
+          },
+          clearLogToken() {
+            this.logsToken = []
+          },
+          async findFruit() {
+            const result = await axios.get('/api/fruits')
+            this.fruits = result.data.data
+          },
+          createFruits() {
+            axios.post('/api/fruits', this.fruit)
+            this.findFruit()
+          },
+          updateFruit() {
+            axios.put('/api/fruits', {
+              _id: '62cf0877b074f1dcedf40705',
+              name: 'apple'
+            })
+            this.findFruit()
+          },
+          deleteFruit(id) {
+            axios.delete(`/api/fruits/${id}`)
+            this.findFruit()
+          }
+        },
+      });
+    </script>
+  </body>
+</html>
