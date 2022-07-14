@@ -78,11 +78,11 @@
         }
       )
       axios.defaults.withCredentials = true;
-      axios.interceptors.response.use((response) => {
-        // app.logs.push(JSON.stringify(response.data));
-        app.logsToken.push(JSON.stringify(response.data))
-        return response;
-      });
+      // axios.interceptors.response.use((response) => {
+      //   app.logs.push(JSON.stringify(response.data));
+      //   app.logsToken.push(JSON.stringify(response.data))
+      //   return response;
+      // });
       const app = new Vue({
         el: "#app",
         data: {
@@ -125,7 +125,6 @@
               username: this.username,
               password: this.password,
             });
-            console.log("submit");
             this.username = "";
             this.password = "";
           },
@@ -149,7 +148,13 @@
             localStorage.removeItem('token')
           },
           getUserToken() {
-            axios.get('/users/getUser-token')
+            axios.get('/users/getUser-token').then(res => {
+              console.log('成功接收')
+            }).catch(err => {
+              if(err.response.status ==401) {
+                alert('You should login first')
+              }
+            })
           },
           clearLogToken() {
             this.logsToken = []
